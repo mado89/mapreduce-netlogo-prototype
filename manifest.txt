@@ -1,0 +1,5 @@
+Manifest-Version: 1.0
+Extension-Name: mapred
+Class-Manager: org.nlogo.extensions.mapred.MapRedProto
+NetLogo-Extension-API-Version: 5.0
+

@@ -1,0 +1,9 @@
+.classpath
+.project
+.settings
+classes
+bin
+*.jar
+*.*~
+./mapred
+
