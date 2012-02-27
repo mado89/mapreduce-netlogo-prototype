@@ -1,6 +1,9 @@
 package org.nlogo.extensions.mapred;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 
 import org.apache.log4j.Logger;
@@ -80,8 +83,10 @@ public class MapReduce extends DefaultCommand
 		logger.debug("Mapping ended");
 		logger.debug(MapRedProto.map.toString());
 		
+		//Go to reduce Stage
 		MapRedProto.stage= MapRedProto.REDUCE_STAGE;
 		
+		//Reduce
 		keys= MapRedProto.map.keySet().toArray();
 		for(i= 0; i < keys.length; i++)
 		{
@@ -104,6 +109,26 @@ public class MapReduce extends DefaultCommand
 		
 		logger.debug("Reducing ended");
 		logger.debug(MapRedProto.rmap.toString());
+		
+		//Write Output
+		try
+		{
+			path= MapRedProto.em.getFile(MapRedProto.config.getOutputDirectory()).getPath();
+			path= MapRedProto.em.getFile("./").getPath();
+			File file= new File(path + "/output.txt");
+			BufferedWriter out= new BufferedWriter(new FileWriter(file));
+			keys= MapRedProto.rmap.keySet().toArray();
+			for(i= 0; i < keys.length; i++)
+			{
+				// vals= MapRedProto.map.get(keys[i]);
+				out.write(keys[i] + ": " + MapRedProto.rmap.get(keys[i]) + "\n");
+			}
+			out.close();
+		}
+		catch(IOException e)
+		{
+			throw new ExtensionException( e );
+		}
 	}
 }
 
