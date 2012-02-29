@@ -110,24 +110,27 @@ public class MapReduce extends DefaultCommand
 		logger.debug("Reducing ended");
 		logger.debug(MapRedProto.rmap.toString());
 		
-		//Write Output
-		try
+		if( MapRedProto.config.writeOutput() )
 		{
-			path= MapRedProto.em.getFile(MapRedProto.config.getOutputDirectory()).getPath();
-			path= MapRedProto.em.getFile("./").getPath();
-			File file= new File(path + "/output.txt");
-			BufferedWriter out= new BufferedWriter(new FileWriter(file));
-			keys= MapRedProto.rmap.keySet().toArray();
-			for(i= 0; i < keys.length; i++)
+			//Write Output
+			try
 			{
-				// vals= MapRedProto.map.get(keys[i]);
-				out.write(keys[i] + ": " + MapRedProto.rmap.get(keys[i]) + "\n");
+				path= MapRedProto.em.getFile(MapRedProto.config.getOutputDirectory()).getPath();
+				path= MapRedProto.em.getFile("./").getPath();
+				File file= new File(path + "/output.txt");
+				BufferedWriter out= new BufferedWriter(new FileWriter(file));
+				keys= MapRedProto.rmap.keySet().toArray();
+				for(i= 0; i < keys.length; i++)
+				{
+					// vals= MapRedProto.map.get(keys[i]);
+					out.write(keys[i] + ": " + MapRedProto.rmap.get(keys[i]) + "\n");
+				}
+				out.close();
 			}
-			out.close();
-		}
-		catch(IOException e)
-		{
-			throw new ExtensionException( e );
+			catch(IOException e)
+			{
+				throw new ExtensionException( e );
+			}
 		}
 	}
 }
