@@ -38,6 +38,8 @@ public class MapRedProto extends org.nlogo.api.DefaultClassManager
      manager.addPrimitive("writeoutput", new WriteOutput());
      manager.addPrimitive("map.linewise", new Emit());
      manager.addPrimitive("mapreduce", new MapReduce());
+     manager.addPrimitive("mapreduce.list", new MapReduceList());
+     
   }
   
   /**
@@ -56,6 +58,13 @@ public class MapRedProto extends org.nlogo.api.DefaultClassManager
     BasicConfigurator.configure();
     
     this.em= em;
+  }
+  
+  public static void resetMap()
+  {
+  	map= new HashMap<Object, ArrayList<Object>>();
+    rmap= new HashMap<Object, Object>();
+    logger.debug("maps reseted");
   }
   
   /**

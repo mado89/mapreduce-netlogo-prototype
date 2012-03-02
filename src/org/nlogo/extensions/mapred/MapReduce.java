@@ -19,7 +19,7 @@ import org.nlogo.api.LogoListBuilder;
 
 public class MapReduce extends DefaultCommand
 {
-	Logger logger = Logger.getLogger(InputDir.class);
+	Logger logger = Logger.getLogger(MapReduce.class);
 	
 	public Syntax getSyntax()
 	{
@@ -72,6 +72,7 @@ public class MapReduce extends DefaultCommand
 		
 		logger.debug("Inputfiles: " + list.toString());
 		
+		MapRedProto.resetMap();
 		MapRedProto.stage= MapRedProto.MAP_STAGE;
 		logger.debug("Mapping started");
 		margs= new Object[1];
