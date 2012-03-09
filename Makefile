@@ -13,7 +13,7 @@ JAVAC = $(JAVA_HOME)/bin/javac
 
 mapred/mapred.jar: $(SRCS) manifest.txt
 	mkdir -p classes
-	$(JAVAC) -g -encoding us-ascii -source 1.5 -target 1.5 -classpath $(NETLOGO)/NetLogoLite.jar:/usr/share/java/log4j-1.2.jar -d classes $(SRCS)
+	$(JAVAC) -g -encoding us-ascii -source 1.5 -target 1.5 -classpath $(NETLOGO)/NetLogo.jar:/usr/share/java/log4j-1.2.jar -d classes $(SRCS)
 	jar cmf manifest.txt mapred/mapred.jar -C classes .
 
 
