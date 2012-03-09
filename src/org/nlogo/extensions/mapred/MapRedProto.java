@@ -19,6 +19,7 @@ public class MapRedProto extends org.nlogo.api.DefaultClassManager
 	public static int stage;
 	public static Configuration config;
 	public static ExtensionManager em;
+	public static org.nlogo.workspace.ExtensionManager em2;
 	
 	public final static int VOID_STAGE= 0;
 	public final static int MAP_STAGE= 1;
@@ -58,6 +59,7 @@ public class MapRedProto extends org.nlogo.api.DefaultClassManager
     BasicConfigurator.configure();
     
     this.em= em;
+    this.em2= (org.nlogo.workspace.ExtensionManager) em;
   }
   
   public static void resetMap()

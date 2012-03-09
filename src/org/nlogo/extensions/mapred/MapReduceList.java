@@ -1,10 +1,9 @@
 package org.nlogo.extensions.mapred;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.util.AbstractList;
+import java.io.PrintWriter;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionService;
@@ -13,52 +12,128 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.apache.log4j.Logger;
-
+import org.nlogo.api.Argument;
 import org.nlogo.api.CommandTask;
+import org.nlogo.api.Context;
 import org.nlogo.api.DefaultCommand;
 import org.nlogo.api.ExtensionException;
-import org.nlogo.api.Syntax;
-import org.nlogo.api.Argument;
-import org.nlogo.api.Context;
 import org.nlogo.api.LogoException;
 import org.nlogo.api.LogoList;
 import org.nlogo.api.LogoListBuilder;
+import org.nlogo.api.Syntax;
+import org.nlogo.headless.HeadlessWorkspace;
 
 public class MapReduceList extends DefaultCommand
 {
-	private class Job implements Runnable, Callable<Object>
+	private class Job implements Callable<Object>
 	{
 		CommandTask task;
 		Object[] args;
 		Context context;
 		Logger logger = Logger.getLogger(MapReduceList.class);
+		String world;
 		
-		public Job(CommandTask task, Object[] args, Context context)
+		public Job(CommandTask task, Object[] args, Context context, String world)
 		{
 			this.task= task;
 			this.args= args;
 			this.context= context;
+			this.world= new String(world); //just to be sure (for thread-safe)
 		}
 		
-		public void run()
-		{
-			logger.debug("Starting " + task.toString() + " " + args[0].toString() );
-			task.perform(context, args);
-			logger.debug("Ended " + task.toString() + " " + args[0].toString() );
-		}
-
 		@Override
-		public Object call() throws Exception
+		public Object call()
 		{
 			logger.debug("Starting " + task.toString() + " " + args[0].toString() );
-			task.perform(context, args);
+			
+			String model= MapRedProto.em2.workspace().getModelPath();
+			logger.debug(model);
+			
+			HeadlessWorkspace ws = HeadlessWorkspace.newInstance();
+			logger.debug("WS created");
+			
+			ws.open(model);
+			logger.debug("Model opened");
+			
+			StringReader sr = new StringReader(world);
+			logger.debug("Reader created");
+			try {
+				ws.importWorld(sr);
+			} catch (IOException e) {
+				logger.debug(e);
+			}
+			logger.debug("WS Imported");
+			
+			// task.perform(context, args);
+			
+			try {
+				ws.dispose();
+			} catch (InterruptedException e) {
+				logger.debug(e);
+			}
+			
 			logger.debug("Ended " + task.toString() + " " + args[0].toString() );
 			return null;
 		}
 	}
 	
+	// TODO: explain Semaphor
+	private class WSem
+	{
+		private String world= "";
+		private final Object sync= new Object();
+		private boolean exportRunning= false;
+		
+		public void aa()
+		{
+			org.nlogo.awt.EventQueue.invokeLater(new Runnable()
+			{
+				public void run()
+				{
+					try
+					{
+						synchronized(sync)
+						{
+							StringWriter sw = new StringWriter();
+							MapRedProto.em2.workspace().exportWorld(new PrintWriter(sw));
+							logger.debug("exported");
+							world = sw.toString();
+							exportRunning= false;
+							sync.notifyAll();
+							logger.debug("notified");
+						}
+					}
+					catch(IOException io)
+					{
+						logger.error(io);
+					}
+				}
+			});
+		}
+		
+		public String getWorld()
+		{
+			logger.debug("exR " + exportRunning);
+			synchronized( sync )
+			{
+				while( exportRunning || world.equals("") )
+				{
+					try {
+						logger.debug("wait");
+						sync.wait();
+						logger.debug("waited");
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+			}
+			return world;
+		}
+	}
 	
 	Logger logger = Logger.getLogger(MapReduceList.class);
+	private WSem wsem;
 	
 	public Syntax getSyntax()
 	{
@@ -69,7 +144,7 @@ public class MapReduceList extends DefaultCommand
 		});
 	}
 	
-	public void perform(Argument args[], Context context) throws ExtensionException
+	public synchronized void perform(Argument args[], Context context) throws ExtensionException
 	{
 		CommandTask mapt;
 		CommandTask redt;
@@ -124,6 +199,15 @@ public class MapReduceList extends DefaultCommand
 			logger.debug( vall[1].toString() );
 			
 			MapRedProto.resetMap();
+			
+			wsem= new WSem();
+			wsem.aa();
+			String world= wsem.getWorld();
+			wsem= null;
+			
+			logger.debug("Exported");
+			logger.debug("World: " + world.substring(0, 30));
+			
 			MapRedProto.stage= MapRedProto.MAP_STAGE;
 			logger.debug("Mapping.list started");
 			logger.debug(mapt.toString());
@@ -133,7 +217,7 @@ public class MapReduceList extends DefaultCommand
 				margs[0]= vall[i];
 				// mapt.perform(context, margs);
 				// complet.add( pool.submit(new Job(mapt, margs, context)) );
-				complet.submit(new Job(mapt, margs, context));
+				complet.submit(new Job(mapt, margs, context, world));
 				logger.debug("MapTask " + i + " submitted list size:" + vall[i].size());
 			}
 			logger.debug("All Map-Tasks submitted, waiting for completition");
