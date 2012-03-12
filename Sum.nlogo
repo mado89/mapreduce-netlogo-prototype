@@ -8,7 +8,7 @@ to map.sum [key vals]
   ]
   print "summed"
   show sum#
-  mapred:nemit 1 sum#
+  mapred:nemit key sum#
   print "mapt done"
 end
 
@@ -38,6 +38,10 @@ to sumupto [number]
   
   set h fput numbers h
   set h fput 1 h
+  set inp fput h inp
+  set h []
+  set h fput numbers h
+  set h fput 2 h
   set inp fput h inp
   mapred:mapreduce.list "map.sum" "map.sum" inp
   show mapred:result
