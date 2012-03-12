@@ -46,7 +46,6 @@ public class MapRedProto extends org.nlogo.api.DefaultClassManager
      manager.addPrimitive("mapreduce", new MapReduce());
      manager.addPrimitive("mapreduce.list", new MapReduceList());
      manager.addPrimitive("result", new Result());
-     
   }
   
   /**
@@ -72,31 +71,32 @@ public class MapRedProto extends org.nlogo.api.DefaultClassManager
   }
   
   private void setupNetwork()
-	{
-		MapRedProto.network = new Network();
-		try
-		{
-			network.initServer();
-		}
-		/*
-		* TODO: Okay this is a really nasty work around What I do: If its not
-		* possible to bind on the port, I assume that the server is allready
-		* running, so i make that Workspace to a client
-		*/
-		catch (BindException e)
-		{
-			logger.debug("Port in use --> make it client");
-			try
-			{
-				network.initClient("localhost"); // TODO: use real network adress
-			} catch (IOException e1)
-			{
-				logger.error(e);
-			} 
-		} catch (Exception e)
-		{
-			logger.error(e);
-		}
+  {
+  	MapRedProto.network = new Network();
+  	try
+  	{
+  		network.initServer();
+  		network.runServer();
+  	}
+  	/*
+  	* TODO: Okay this is a really nasty work around What I do: If its not
+  	* possible to bind on the port, I assume that the server is allready
+  	* running, so i make that Workspace to a client
+  	*/
+  	catch (BindException e)
+  	{
+  		logger.debug("Port in use --> make it client");
+  		try
+  		{
+  			network.initClient("localhost"); // TODO: use real network adress
+  		} catch (IOException e1)
+  		{
+  			logger.error(e);
+  		}
+  	} catch (Exception e)
+  	{
+  		logger.error(e);
+  	}
 	}
   
   public static void resetMap()

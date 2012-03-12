@@ -39,7 +39,8 @@ to sumupto [number]
     set i (i + 1) 
   ]
   
-  mapred:mapreduce.list task map.sum task reduce.sum numbers
+  mapred:mapreduce.list "map.sum" "reduce.sum" numbers
+  show mapred:result
 end
 
 to sumupto.iter [number]
@@ -51,8 +52,6 @@ to sumupto.iter [number]
     set sum# (sum# + i)
     set i (i + 1) 
   ]
-  
-  mapred:mapreduce.list task map.sum task reduce.sum numbers
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
