@@ -15,7 +15,7 @@ public class Result extends DefaultReporter
 	
 	public Syntax getSyntax()
 	{
-		return Syntax.reporterSyntax(new int[] {}, Syntax.ListType()));
+		return Syntax.reporterSyntax(new int[] {}, Syntax.ListType());
 	}
 	
 	public Object report(Argument args[], Context context) throws ExtensionException
