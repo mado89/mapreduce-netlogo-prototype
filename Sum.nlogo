@@ -8,7 +8,7 @@ to map.sum [vals]
   ]
   print "summed"
   show sum#
-  mapred:emit 1 sum#
+  mapred:nemit 1 sum#
   print "mapt done"
 end
 

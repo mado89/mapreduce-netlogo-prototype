@@ -14,6 +14,7 @@ import java.util.concurrent.Executors;
 import org.apache.log4j.Logger;
 import org.nlogo.api.Argument;
 import org.nlogo.api.CommandTask;
+import org.nlogo.api.CompilerException;
 import org.nlogo.api.Context;
 import org.nlogo.api.DefaultCommand;
 import org.nlogo.api.ExtensionException;
@@ -22,10 +23,11 @@ import org.nlogo.api.LogoList;
 import org.nlogo.api.LogoListBuilder;
 import org.nlogo.api.Syntax;
 import org.nlogo.headless.HeadlessWorkspace;
+import org.nlogo.nvm.Procedure;
 
 public class MapReduceList extends DefaultCommand
 {
-	private class Job implements Callable<Object>
+	private class MyJob implements Callable<Object>
 	{
 		CommandTask task;
 		Object[] args;
@@ -33,7 +35,7 @@ public class MapReduceList extends DefaultCommand
 		Logger logger = Logger.getLogger(MapReduceList.class);
 		String world;
 		
-		public Job(CommandTask task, Object[] args, Context context, String world)
+		public MyJob(CommandTask task, Object[] args, Context context, String world)
 		{
 			this.task= task;
 			this.args= args;
@@ -65,10 +67,16 @@ public class MapReduceList extends DefaultCommand
 			logger.debug("WS Imported");
 			
 			// task.perform(context, args);
+			// TODO: call emit
+			String s= "map.sum " + args[0].toString().replace(',', ' ');
+			logger.debug(s);
+			ws.command(s);
 			
-			try {
+			try
+			{
 				ws.dispose();
-			} catch (InterruptedException e) {
+			} catch (InterruptedException e)
+			{
 				logger.debug(e);
 			}
 			
@@ -217,7 +225,7 @@ public class MapReduceList extends DefaultCommand
 				margs[0]= vall[i];
 				// mapt.perform(context, margs);
 				// complet.add( pool.submit(new Job(mapt, margs, context)) );
-				complet.submit(new Job(mapt, margs, context, world));
+				complet.submit(new MyJob(mapt, margs, context, world));
 				logger.debug("MapTask " + i + " submitted list size:" + vall[i].size());
 			}
 			logger.debug("All Map-Tasks submitted, waiting for completition");
