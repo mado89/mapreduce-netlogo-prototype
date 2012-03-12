@@ -1,7 +1,10 @@
 package org.nlogo.extensions.mapred;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -75,10 +78,32 @@ public class MapReduce extends DefaultCommand
 		MapRedProto.resetMap();
 		MapRedProto.stage= MapRedProto.MAP_STAGE;
 		logger.debug("Mapping started");
-		margs= new Object[1];
+		margs= new Object[2];
 		for(i= 0; i < list.size(); i++)
 		{
-			margs[0]= list.get(i);
+			String fn= list.get(i);
+			margs[0]= fn;
+			String s= "";
+			
+			try
+			{
+				File file= new File(fn);
+				BufferedReader in= new BufferedReader(new FileReader(file));
+				// while( in.)
+				String line;
+				while((line= in.readLine()) != null)
+					s+= line;
+			} catch (FileNotFoundException e)
+			{
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+			margs[1]= s;
+			
 			mapt.perform(context, margs);
 		}
 		logger.debug("Mapping ended");

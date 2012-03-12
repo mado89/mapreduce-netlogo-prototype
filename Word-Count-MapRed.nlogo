@@ -12,18 +12,14 @@ to-report split [ #string ] ; http://groups.yahoo.com/group/netlogo-users/messag
   ]
 end
 
-to read-file [file-name] ; Jeweils eine ganze Datei bearbeiten
-  file-open file-name
-  while[not file-at-end?][ ;die ganze Datei bearbeiten (zeilenweise)
-    foreach split file-read-line ; Zeile lesen und zerteilen
+to read-file [file-name contents] ; Jeweils eine ganze Datei bearbeiten
+  foreach split contents ; Zeile lesen und zerteilen
     [
       mapred:emit ? 1 ; <wort, 1> Wort kommt aus split
     ]
-  ]
-  file-close
 end
 
-to read-line [line] ; Jeweils eine Zeile bearbeiten
+to read-line [file-name line] ; Jeweils eine Zeile bearbeiten
   foreach split line ; die Zeile zerteilen
   [
     mapred:emit ? 1 ; <wort,1>
