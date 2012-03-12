@@ -1,6 +1,6 @@
 extensions [mapred]
 
-to map.sum [vals]
+to map.sum [key vals]
   show vals
   let sum#  0
   foreach vals [
@@ -10,11 +10,6 @@ to map.sum [vals]
   show sum#
   mapred:nemit 1 sum#
   print "mapt done"
-end
-
-to reduce.sum [key vals]
-  ; show vals
-  map.sum vals
 end
 
 to benchmark
@@ -33,13 +28,18 @@ end
 
 to sumupto [number]
   let numbers []
+  let inp []
+  let h []
   let i 0
   while [i < number] [
     set numbers lput i numbers
     set i (i + 1) 
   ]
   
-  mapred:mapreduce.list "map.sum" "reduce.sum" numbers
+  set h fput numbers h
+  set h fput 1 h
+  set inp fput h inp
+  mapred:mapreduce.list "map.sum" "map.sum" inp
   show mapred:result
 end
 
