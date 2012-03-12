@@ -45,7 +45,6 @@ public class MapRedProto extends org.nlogo.api.DefaultClassManager
      manager.addPrimitive("map.linewise", new Emit());
      manager.addPrimitive("mapreduce", new MapReduce());
      manager.addPrimitive("mapreduce.list", new MapReduceList());
-     
   }
   
   /**
@@ -76,6 +75,7 @@ public class MapRedProto extends org.nlogo.api.DefaultClassManager
 		try
 		{
 			network.initServer();
+			network.runServer();
 		}
 		/*
 		* TODO: Okay this is a really nasty work around What I do: If its not

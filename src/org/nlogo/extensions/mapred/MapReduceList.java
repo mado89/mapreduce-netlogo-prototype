@@ -14,7 +14,6 @@ import java.util.concurrent.Executors;
 import org.apache.log4j.Logger;
 import org.nlogo.api.Argument;
 import org.nlogo.api.CommandTask;
-import org.nlogo.api.CompilerException;
 import org.nlogo.api.Context;
 import org.nlogo.api.DefaultCommand;
 import org.nlogo.api.ExtensionException;
@@ -23,23 +22,20 @@ import org.nlogo.api.LogoList;
 import org.nlogo.api.LogoListBuilder;
 import org.nlogo.api.Syntax;
 import org.nlogo.headless.HeadlessWorkspace;
-import org.nlogo.nvm.Procedure;
 
 public class MapReduceList extends DefaultCommand
 {
 	private class MyJob implements Callable<Object>
 	{
-		CommandTask task;
+		String task;
 		Object[] args;
-		Context context;
 		Logger logger = Logger.getLogger(MapReduceList.class);
 		String world;
 		
-		public MyJob(CommandTask task, Object[] args, Context context, String world)
+		public MyJob(String task, Object[] args, String world)
 		{
 			this.task= task;
 			this.args= args;
-			this.context= context;
 			this.world= new String(world); //just to be sure (for thread-safe)
 		}
 		
@@ -66,9 +62,9 @@ public class MapReduceList extends DefaultCommand
 			}
 			logger.debug("WS Imported");
 			
-			// task.perform(context, args);
-			// TODO: call emit
-			String s= "map.sum " + args[0].toString().replace(',', ' ');
+			String s= task;
+			for(int i= 0; i < args.length; i++)
+				 s+= " " + args[i].toString().replace(',', ' ');
 			logger.debug(s);
 			ws.command(s);
 			
@@ -146,16 +142,16 @@ public class MapReduceList extends DefaultCommand
 	public Syntax getSyntax()
 	{
 		return Syntax.commandSyntax(new int[] {
-			Syntax.CommandTaskType() | Syntax.CommandBlockType(),
-			Syntax.CommandTaskType() | Syntax.CommandBlockType(),
+			Syntax.StringType(),
+			Syntax.StringType(),
 			Syntax.ListType()
 		});
 	}
 	
 	public synchronized void perform(Argument args[], Context context) throws ExtensionException
 	{
-		CommandTask mapt;
-		CommandTask redt;
+		String mapt;
+		String redt;
 		ArrayList<String> list = new ArrayList<String>();
 		Object[] keys;
 		Object[] margs;
@@ -169,8 +165,8 @@ public class MapReduceList extends DefaultCommand
 		
 		try
 		{
-			mapt= args[0].getCommandTask();
-			redt= args[1].getCommandTask();
+			mapt= args[0].getString();
+			redt= args[1].getString();
 			pvals= args[2].getList();
 		}
 		catch(LogoException e)
@@ -225,7 +221,7 @@ public class MapReduceList extends DefaultCommand
 				margs[0]= vall[i];
 				// mapt.perform(context, margs);
 				// complet.add( pool.submit(new Job(mapt, margs, context)) );
-				complet.submit(new MyJob(mapt, margs, context, world));
+				complet.submit(new MyJob(mapt, margs, world));
 				logger.debug("MapTask " + i + " submitted list size:" + vall[i].size());
 			}
 			logger.debug("All Map-Tasks submitted, waiting for completition");
@@ -246,9 +242,12 @@ public class MapReduceList extends DefaultCommand
 			MapRedProto.stage= MapRedProto.REDUCE_STAGE;
 			
 			//Reduce
+			pool= Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+			complet= new ExecutorCompletionService<Object>(pool);
+			
 			keys= MapRedProto.map.keySet().toArray();
 			logger.debug("Keys " + keys.toString() );
-			/*for(i= 0; i < keys.length; i++)
+			for(i= 0; i < keys.length; i++)
 			{
 				ArrayList<Object> l= new ArrayList<Object>();
 				l.add(keys[i]);
@@ -262,16 +261,26 @@ public class MapReduceList extends DefaultCommand
 				
 				l.add( vlist.toLogoList() );
 				
-				logger.debug("Reducing started for " + keys[i] + "(" + MapRedProto.map.get(keys[i]) + ")");
-				logger.debug(redt.toString());
-				redt.perform(context, l.toArray());
-				logger.debug("Reducing " + keys[i] + " ended");
+				// mapt.perform(context, margs);
+				// complet.add( pool.submit(new Job(mapt, margs, context)) );
+				complet.submit(new MyJob(redt, l.toArray(), world));
+				logger.debug("ReduceTask " + i + " submitted list size:" + vall[i].size());
 			}
-			
+			logger.debug("All Map-Tasks submitted, waiting for completition");
+			// pool.shutdown();
+			try
+			{
+				pool.shutdown();
+				for(i= 0; i < keys.length; i++)
+					complet.take();
+			}catch(InterruptedException e)
+			{
+				throw new ExtensionException( e );
+			}
 			logger.debug("Reducing ended");
 			logger.debug(MapRedProto.rmap.toString());
 			
-			if( MapRedProto.config.writeOutput() )
+			/*if( MapRedProto.config.writeOutput() )
 			{
 				//Write Output
 				try
