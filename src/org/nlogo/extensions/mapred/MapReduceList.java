@@ -25,26 +25,26 @@ import org.nlogo.headless.HeadlessWorkspace;
 
 public class MapReduceList extends DefaultCommand
 {
-	private class Job implements Callable<Object>
+	private class MyJob implements Callable<Object>
 	{
-		CommandTask task;
-		Object[] args;
-		Context context;
+		String task;
+		Object key;
+		Object[] values;
 		Logger logger = Logger.getLogger(MapReduceList.class);
 		String world;
 		
-		public Job(CommandTask task, Object[] args, Context context, String world)
+		public MyJob(String task, Object key, Object[] values, String world)
 		{
 			this.task= task;
-			this.args= args;
-			this.context= context;
+			this.key= key;
+			this.values= values;
 			this.world= new String(world); //just to be sure (for thread-safe)
 		}
 		
 		@Override
 		public Object call()
 		{
-			logger.debug("Starting " + task.toString() + " " + args[0].toString() );
+			logger.debug("Starting " + task.toString() + " " + key.toString() + " " + values.toString() );
 			
 			String model= MapRedProto.em2.workspace().getModelPath();
 			logger.debug(model);
@@ -64,15 +64,24 @@ public class MapReduceList extends DefaultCommand
 			}
 			logger.debug("WS Imported");
 			
-			// task.perform(context, args);
+			String s= task;
+			s+= " " + key.toString(); //key
+			s+= " [";
+			for(int i= 0; i < values.length; i++ ) //value
+				s+= " " + values[i].toString();
+			s+= "]";
+			logger.debug(s);
+			ws.command(s);
 			
-			try {
+			try
+			{
 				ws.dispose();
-			} catch (InterruptedException e) {
+			} catch (InterruptedException e)
+			{
 				logger.debug(e);
 			}
 			
-			logger.debug("Ended " + task.toString() + " " + args[0].toString() );
+			logger.debug("Ended " + task.toString() + " " + key.toString() );
 			return null;
 		}
 	}
@@ -138,95 +147,108 @@ public class MapReduceList extends DefaultCommand
 	public Syntax getSyntax()
 	{
 		return Syntax.commandSyntax(new int[] {
-			Syntax.CommandTaskType() | Syntax.CommandBlockType(),
-			Syntax.CommandTaskType() | Syntax.CommandBlockType(),
+			Syntax.StringType(),
+			Syntax.StringType(),
 			Syntax.ListType()
 		});
 	}
 	
 	public synchronized void perform(Argument args[], Context context) throws ExtensionException
 	{
-		CommandTask mapt;
-		CommandTask redt;
-		ArrayList<String> list = new ArrayList<String>();
+		String mapt;
+		String redt;
 		Object[] keys;
-		Object[] margs;
 		Object[] vals;
 		int i, j;
-		LogoList pvals; //passed values
-		LogoList[] vall; //value lists
-		String path;
+		LogoList lol, pvals; //passed values
+		int jobC= 0;
 		
 		pvals= null;
 		
 		try
 		{
-			mapt= args[0].getCommandTask();
-			redt= args[1].getCommandTask();
-			pvals= args[2].getList();
+			mapt= args[0].getString();
+			redt= args[1].getString();
+			lol= args[2].getList();
 		}
 		catch(LogoException e)
 		{
 			throw new ExtensionException(e.getMessage());
 		}
 		
-		if( pvals != null )
+		if( lol != null )
 		{
-			// Runtime.getRuntime().availableProcessors();
+			Object[] lola= lol.toArray();
 			
-			ExecutorService pool= Executors.newFixedThreadPool(2);
+			ExecutorService pool= Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 			CompletionService<Object> complet= new ExecutorCompletionService<Object>(pool);
-			
-			/*int size= pvals.size();
-			int half= size / 2;
-			vall= new LogoList[2];
-			vall[0]= pvals.logoSublist(0, half);
-			logger.debug( vall[0].toString() );
-			logger.debug( pvals.toString() );
-			vall[1]= pvals.logoSublist(half, pvals.size());
-			logger.debug( vall[1].toString() );*/
-			vall= new LogoList[2];
-			LogoListBuilder build = new LogoListBuilder();
-			int half= pvals.size() / 2;
-			for(i= 0; i < half; i++)
-				build.add( pvals.get(i) );
-			vall[0]= build.toLogoList();
-			build = new LogoListBuilder();
-			for(; i < pvals.size(); i++)
-				build.add( pvals.get(i) );
-			vall[1]= build.toLogoList();
-			logger.debug( vall[0].toString() );
-			logger.debug( vall[1].toString() );
-			
-			MapRedProto.resetMap();
 			
 			wsem= new WSem();
 			wsem.aa();
 			String world= wsem.getWorld();
 			wsem= null;
-			
 			logger.debug("Exported");
 			logger.debug("World: " + world.substring(0, 30));
 			
+			MapRedProto.resetMap();
+			
 			MapRedProto.stage= MapRedProto.MAP_STAGE;
-			logger.debug("Mapping.list started");
-			logger.debug(mapt.toString());
-			for(i= 0; i < 2; i++)
+			
+			for(int l= 0; l < lola.length; l++)
 			{
-				margs= new Object[1];
-				margs[0]= vall[i];
-				// mapt.perform(context, margs);
-				// complet.add( pool.submit(new Job(mapt, margs, context)) );
-				complet.submit(new Job(mapt, margs, context, world));
-				logger.debug("MapTask " + i + " submitted list size:" + vall[i].size());
+				LogoList ll= (LogoList) lola[l];
+				logger.debug(ll.toString());
+				Object key= ll.first();
+				ll= ll.butFirst();
+				pvals= (LogoList) ll.first();
+				
+				vals= new Object[2];
+				int borders[];
+				borders= new int[2];
+				borders[0]= pvals.size() / 2;
+				borders[1]= pvals.size();
+				
+				/*ArrayList<Object> build= new ArrayList<Object>();
+				for(i= 0; i < half; i++)
+				{
+					build.add( pvals.first() );
+					pvals= pvals.butFirst();
+				}
+				vals[0]= build.toArray();
+				build = new ArrayList<Object>();
+				for(; i < pvals.size(); i++)
+				{
+					build.add( pvals.first() );
+					pvals= pvals.butFirst();
+				}
+				vals[1]= build.toArray();
+				logger.debug( ((Object[]) vals[0]).toString() );
+				logger.debug( vals[1].toString() );*/
+			
+				logger.debug("Mapping.list started");
+				j= 0;
+				for(i= 0; i < 2; i++)
+				{
+					ArrayList<Object> build= new ArrayList<Object>();
+					for(; j < borders[i]; j++)
+					{
+						build.add( pvals.first() );
+						pvals= pvals.butFirst();
+					}
+					// mapt.perform(context, margs);
+					// complet.add( pool.submit(new Job(mapt, margs, context)) );
+					complet.submit(new MyJob(mapt, key, build.toArray(), world));
+					jobC++;
+					logger.debug("MapTask " + i + " submitted list size:" + build.size());
+				}
 			}
 			logger.debug("All Map-Tasks submitted, waiting for completition");
-			// pool.shutdown();
+
 			try
 			{
 				pool.shutdown();
-				complet.take();
-				complet.take();
+				for(int l= 0; l < jobC; l++)
+					complet.take();
 			}catch(InterruptedException e)
 			{
 				throw new ExtensionException( e );
@@ -238,32 +260,35 @@ public class MapReduceList extends DefaultCommand
 			MapRedProto.stage= MapRedProto.REDUCE_STAGE;
 			
 			//Reduce
+			pool= Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+			complet= new ExecutorCompletionService<Object>(pool);
+			
 			keys= MapRedProto.map.keySet().toArray();
 			logger.debug("Keys " + keys.toString() );
-			/*for(i= 0; i < keys.length; i++)
+			for(i= 0; i < keys.length; i++)
 			{
-				ArrayList<Object> l= new ArrayList<Object>();
-				l.add(keys[i]);
-				
-				 // create a NetLogo list for the result
-				 LogoListBuilder vlist = new LogoListBuilder();
-				
 				vals= MapRedProto.map.get(keys[i]).toArray();
-				for(j= 0; j < vals.length; j++)
-					vlist.add(vals[j]);
 				
-				l.add( vlist.toLogoList() );
-				
-				logger.debug("Reducing started for " + keys[i] + "(" + MapRedProto.map.get(keys[i]) + ")");
-				logger.debug(redt.toString());
-				redt.perform(context, l.toArray());
-				logger.debug("Reducing " + keys[i] + " ended");
+				// mapt.perform(context, margs);
+				// complet.add( pool.submit(new Job(mapt, margs, context)) );
+				complet.submit(new MyJob(redt, keys[i], vals, world));
+				logger.debug("ReduceTask " + i + " submitted list size:" + vals.length);
 			}
-			
+			logger.debug("All Map-Tasks submitted, waiting for completition");
+			// pool.shutdown();
+			try
+			{
+				pool.shutdown();
+				for(i= 0; i < keys.length; i++)
+					complet.take();
+			}catch(InterruptedException e)
+			{
+				throw new ExtensionException( e );
+			}
 			logger.debug("Reducing ended");
 			logger.debug(MapRedProto.rmap.toString());
 			
-			if( MapRedProto.config.writeOutput() )
+			/*if( MapRedProto.config.writeOutput() )
 			{
 				//Write Output
 				try

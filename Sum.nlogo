@@ -1,6 +1,6 @@
 extensions [mapred]
 
-to map.sum [vals]
+to map.sum [key vals]
   show vals
   let sum#  0
   foreach vals [
@@ -8,13 +8,8 @@ to map.sum [vals]
   ]
   print "summed"
   show sum#
-  mapred:emit 1 sum#
+  mapred:nemit key sum#
   print "mapt done"
-end
-
-to reduce.sum [key vals]
-  ; show vals
-  map.sum vals
 end
 
 to benchmark
@@ -33,13 +28,23 @@ end
 
 to sumupto [number]
   let numbers []
+  let inp []
+  let h []
   let i 0
   while [i < number] [
     set numbers lput i numbers
     set i (i + 1) 
   ]
   
-  mapred:mapreduce.list task map.sum task reduce.sum numbers
+  set h fput numbers h
+  set h fput 1 h
+  set inp fput h inp
+  set h []
+  set h fput numbers h
+  set h fput 2 h
+  set inp fput h inp
+  mapred:mapreduce.list "map.sum" "map.sum" inp
+  show mapred:result
 end
 
 to sumupto.iter [number]
@@ -51,8 +56,6 @@ to sumupto.iter [number]
     set sum# (sum# + i)
     set i (i + 1) 
   ]
-  
-  mapred:mapreduce.list task map.sum task reduce.sum numbers
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
