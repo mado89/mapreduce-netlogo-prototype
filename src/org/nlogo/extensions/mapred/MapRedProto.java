@@ -42,7 +42,7 @@ public class MapRedProto extends org.nlogo.api.DefaultClassManager
      manager.addPrimitive("inputdir", new InputDir());
      manager.addPrimitive("outputdir", new OutputDir());
      manager.addPrimitive("writeoutput", new WriteOutput());
-     manager.addPrimitive("map.linewise", new Emit());
+     // manager.addPrimitive("map.linewise", new Emit());
      manager.addPrimitive("mapreduce", new MapReduce());
      manager.addPrimitive("mapreduce.list", new MapReduceList());
      manager.addPrimitive("result", new Result());
