@@ -13,10 +13,14 @@ to-report split [ #string ] ; http://groups.yahoo.com/group/netlogo-users/messag
 end
 
 to read-file [file-name contents] ; Jeweils eine ganze Datei bearbeiten
-  foreach split contents ; Zeile lesen und zerteilen
+  foreach contents
+  [
+   foreach split ? ; Text lesen und zerteilen
     [
+      ; show ?
       mapred:emit ? 1 ; <wort, 1> Wort kommt aus split
     ]
+  ]
 end
 
 to read-line [file-name line] ; Jeweils eine Zeile bearbeiten
@@ -46,7 +50,9 @@ to wc
   
   mapred:inputdir "input" ; Den gesamten Inhalt des Verzeichnisses bearbeiten
   mapred:outputdir "" ; im aktuellen Verzeichnis ausgeben
-  mapred:mapreduce task read-file task word-count
+  mapred:writeoutput True
+  ; mapred:mapreduce "read-file" "word-count"
+  mapred:mapreduce.local task read-file task word-count
   
   ; mapred:inputdir "input"
   ; mapred:outputdir ""
