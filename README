@@ -1,0 +1,18 @@
+To run the examples:
+
+Word-Count-MapRed
+--------
+you need a directory named 'input' in the same directory as the model.
+Place some text files in the input directory and run wc from the observer
+Then take a look at output.txt
+
+
+Pi
+-------
+Gives an esitmation of pi
+Just run makepi
+
+Sum
+------
+run sumupto <number>
+
