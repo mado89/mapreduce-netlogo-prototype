@@ -1,7 +1,7 @@
 extensions [mapred]
 
 to map.sum [key vals]
-  show vals
+  show word "vals " vals
   let sum#  0
   foreach vals [
    set sum# sum# + ? 
@@ -36,13 +36,14 @@ to sumupto [number]
     set i (i + 1) 
   ]
   
-  set h fput numbers h
-  set h fput 1 h
-  set inp fput h inp
-  set h []
-  set h fput numbers h
-  set h fput 2 h
-  set inp fput h inp
+  ; set h fput numbers h
+  ; set h fput 1 h
+  ; set inp fput h inp
+  ; set h []
+  ; set h fput numbers h
+  ; set h fput 2 h
+  ; set inp fput h inp
+  set inp (list (list 1 numbers) (list 2 numbers))
   mapred:mapreduce.list "map.sum" "map.sum" inp
   show mapred:result
 end
@@ -59,13 +60,13 @@ to sumupto.iter [number]
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-210
+14
 10
-649
-470
+259
+221
 16
 16
-13.0
+5.455
 1
 10
 1
